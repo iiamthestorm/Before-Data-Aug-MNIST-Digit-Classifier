@@ -1,27 +1,18 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-==============================================================================*/
-
 package org.tensorflow.lite.codelabs.digitclassifier
 
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.divyanshu.draw.widget.DrawView
+import java.util.*
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +20,9 @@ class MainActivity : AppCompatActivity() {
   private var clearButton: Button? = null
   private var predictedTextView: TextView? = null
   private var digitClassifier = DigitClassifier(this)
+
+  //add textToSpeech
+  private var textToSpeech: TextToSpeech? = null
 
   @SuppressLint("ClickableViewAccessibility")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +36,15 @@ class MainActivity : AppCompatActivity() {
     drawView?.setBackgroundColor(Color.BLACK)
     clearButton = findViewById(R.id.clear_button)
     predictedTextView = findViewById(R.id.predicted_text)
+
+    // create an object textToSpeech and adding features into it
+    textToSpeech = TextToSpeech(applicationContext, OnInitListener { i ->
+      // if No error is found then only it will run
+      if (i != TextToSpeech.ERROR) {
+        // To Choose language of speech
+        textToSpeech!!.language = Locale.ENGLISH
+      }
+    })
 
     // Setup clear drawing button.
     clearButton?.setOnClickListener {
@@ -82,7 +85,10 @@ class MainActivity : AppCompatActivity() {
     if ((bitmap != null) && (digitClassifier.isInitialized)) {
       digitClassifier
         .classifyAsync(bitmap)
-        .addOnSuccessListener { resultText -> predictedTextView?.text = resultText }
+        .addOnSuccessListener { resultText ->
+          predictedTextView?.text = resultText.first
+          textToSpeech?.speak(resultText.second, TextToSpeech.QUEUE_FLUSH, null)
+        }
         .addOnFailureListener { e ->
           predictedTextView?.text = getString(
             R.string.classification_error_message,
