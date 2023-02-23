@@ -86,7 +86,7 @@ class DigitClassifier(private val context: Context) {
     return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
   }
 
-  private fun classify(bitmap: Bitmap): String {
+  private fun classify(bitmap: Bitmap): Pair<String, String> {
     check(isInitialized) { "TF Lite Interpreter is not initialized yet." }
 
     // TODO: Add code to run inference with TF Lite.
@@ -114,14 +114,15 @@ class DigitClassifier(private val context: Context) {
     val maxIndex = result.indices.maxBy {
       result[it]
     } ?: -1
-    val resultString = "Prediction Result: %d\nConfidence: %2f".format(maxIndex, result[maxIndex])
-    return resultString
 
-    return "Let's add TensorFlow Lite code!"
+    return Pair(
+      "Prediction Result: %d\nConfidence: %2f".format(maxIndex, result[maxIndex]),
+      "The Result is, : %d".format(maxIndex)
+    )
   }
 
-  fun classifyAsync(bitmap: Bitmap): Task<String> {
-    val task = TaskCompletionSource<String>()
+  fun classifyAsync(bitmap: Bitmap): Task<Pair<String, String>> {
+    val task = TaskCompletionSource<Pair<String, String>>()
     executorService.execute {
       val result = classify(bitmap)
       task.setResult(result)
